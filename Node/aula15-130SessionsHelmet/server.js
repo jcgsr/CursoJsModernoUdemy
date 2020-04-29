@@ -13,12 +13,14 @@ mongoose.connect(process.env.CONNECTIONSTRING, { useNewUrlParser: true, useUnifi
 const session = require('express-session')
 const MongoStore = require('connect-mongo')(session)
 const flash = require('connect-flash')
-
 const routes = require('./routes')
 const path = require('path')
+const helmet = require('helmet')
+const csrf = require('csurf')
+const { middlewareGlobal, checkCSRFError, csrfMiddleware} = require('./src/middlewares/middleware')
 
+app.use(helmet())
 app.use(express.urlencoded({ extended: true }))
-
 app.use(express.static(path.resolve(__dirname, 'public')))
 
 const sessionsOptions = session({
@@ -35,9 +37,14 @@ app.use(sessionsOptions)
 app.use(flash())
 
 app.set('views', path.resolve(__dirname, 'src', 'views'))
-
 app.set('view engine', 'ejs')
 
+app.use(csrf())
+
+//Nossos próprios middlewares
+app.use(middlewareGlobal)
+app.use(checkCSRFError)
+app.use(csrfMiddleware)
 app.use(routes)
 
 app.on('Pronto', () => {
